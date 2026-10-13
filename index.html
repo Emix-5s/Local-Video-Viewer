@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vid Viewer</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --sidebar-bg: #1e1e1e;
+            --border-color: #333;
+            --accent-color: #0066cc;
+            --hover-color: #2a2a2a;
+            --text-color: #e0e0e0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 340px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .header-panel {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-panel h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+        }
+        .file-btn {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .file-btn:hover {
+            background: #0052a3;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .playlist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .playlist li {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #282828;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.95kr;
+            transition: background 0.2s;
+        }
+        .playlist li:hover {
+            background: var(--hover-color);
+        }
+        .playlist li.active {
+            background: var(--accent-color);
+            color: #fff;
+            font-weight: 500;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 1000px;
+            max-height: 75vh;
+            background: #000;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+        .now-playing {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            color: #aaa;
+            text-align: center;
+            max-width: 800px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="header-panel">
+            <h2>Video Viewer</h2>
+            <label class="file-btn">
+                  Choose Video from PC
+                <input type="file" id="fileInput" multiple accept="video/*">
+            </label>
+        </div>
+        <ul id="playlist" class="playlist">
+            <li style="padding: 20px; color: #777; text-align: center;">No videos selected yet. Click the button above to load files.</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <video id="videoPlayer" controls></video>
+        <div id="nowPlaying" class="now-playing">Select a video to start</div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const playlistElement = document.getElementById('playlist');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const nowPlayingElement = document.getElementById('nowPlaying');
+
+        fileInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files);
+            
+            if (files.length === 0) return;
+
+            playlistElement.innerHTML = '';
+
+            files.forEach((file, index) => {
+                // Create a local temporary object URL for the file
+                const fileUrl = URL.createObjectURL(file);
+                
+                const li = document.createElement('li');
+                li.textContent = file.name;
+                li.title = file.name;
+                
+                li.addEventListener('click', () => {
+                    playVideo(fileUrl, file.name, li);
+                });
+                
+                playlistElement.appendChild(li);
+
+                // Automatically play the first selected video
+                if (index === 0) {
+                    playVideo(fileUrl, file.name, li);
+                }
+            });
+        });
+
+        function playVideo(url, filename, listItem) {
+            document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
+            listItem.classList.add('active');
+
+            videoPlayer.src = url;
+            videoPlayer.play().catch(e => console.log("Autoplay blocked:", e));
+            nowPlayingElement.textContent = `Now Playing: ${filename}`;
+        }
+    </script>
+</body>
+</html>
