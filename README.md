@@ -1,14 +1,13 @@
 # Local Vid Viewer
 
-A lightweight, single-file HTML5 video player that runs entirely in your web browser. It allows you to select multiple video files from your computer, generates an organized playlist sidebar, and lets you stream and watch them instantly with zero server setup required.
 
 ## Features
 
-* **No Server Required:** Runs locally right out of the box—just double-click the HTML file.
-* **Batch File Selection:** Easily select and load multiple video files simultaneously from your PC.
-* **Interactive Playlist:** Clean dark-mode sidebar that lists all loaded videos with active state highlighting.
-* **Full Media Controls:** Standard HTML5 video playback controls with smooth scrubbing and seeking.
-* **Cross-Browser Compatible:** Works seamlessly on Firefox, Chrome, Edge, and Safari.
+* **No Setup:** Runs locally in one/two clicks (Or use my github pages link)
+* **Batch File Selection:** Select and load multiple video files (from your PC.)
+* **Interactive Playlist:** Clean dark-mode sidebar that lists all loaded videos
+* **Full Media Controls:** Standard video playback
+* **Cross-Browser Compatible:** Works on Firefox, Chrome, Edge, and Safari. (Unless for some reason you don't have an HTML5 browser, and in that case screw you)
 
 ## Getting Started
 
