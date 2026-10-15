@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vid Viewer</title>
+    <title>Advanced Media Viewer</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -12,6 +12,16 @@
             --accent-color: #0066cc;
             --hover-color: #2a2a2a;
             --text-color: #e0e0e0;
+            --panel-bg: #181818;
+        }
+        body.light-theme {
+            --bg-color: #f4f4f9;
+            --sidebar-bg: #ffffff;
+            --border-color: #ddd;
+            --accent-color: #0066cc;
+            --hover-color: #eaeaea;
+            --text-color: #333333;
+            --panel-bg: #fafafa;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -21,42 +31,58 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            transition: background 0.3s, color 0.3s;
         }
         .sidebar {
-            width: 340px;
+            width: 360px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
+            transition: background 0.3s, border-color 0.3s;
         }
         .header-panel {
-            padding: 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .header-panel h2 {
-            margin: 0 0 12px 0;
+        .header-panel h2 { margin: 0; font-size: 1.1rem; }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
             font-size: 1.2rem;
+            color: var(--text-color);
+            padding: 5px;
+            border-radius: 4px;
         }
-        .file-btn {
-            display: inline-block;
+        .icon-btn:hover { background: var(--hover-color); }
+        
+        .controls-panel {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--panel-bg);
+        }
+        .btn {
             background: var(--accent-color);
             color: white;
-            padding: 10px 15px;
+            padding: 8px 12px;
+            border: none;
             border-radius: 4px;
             cursor: pointer;
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
-            transition: background 0.2s;
-            width: 100%;
-            box-sizing: border-box;
+            transition: opacity 0.2s;
         }
-        .file-btn:hover {
-            background: #0052a3;
-        }
-        input[type="file"] {
-            display: none;
-        }
+        .btn:hover { opacity: 0.9; }
+        input[type="file"] { display: none; }
+
         .playlist {
             list-style: none;
             padding: 0;
@@ -67,21 +93,16 @@
         .playlist li {
             padding: 12px 20px;
             cursor: pointer;
-            border-bottom: 1px solid #282828;
+            border-bottom: 1px solid var(--border-color);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 0.95kr;
+            font-size: 0.9rem;
             transition: background 0.2s;
         }
-        .playlist li:hover {
-            background: var(--hover-color);
-        }
-        .playlist li.active {
-            background: var(--accent-color);
-            color: #fff;
-            font-weight: 500;
-        }
+        .playlist li:hover { background: var(--hover-color); }
+        .playlist li.active { background: var(--accent-color); color: #fff; font-weight: 500; }
+
         .main-content {
             flex: 1;
             display: flex;
@@ -89,88 +110,240 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
         }
-        video {
+        video, iframe {
             width: 100%;
             max-width: 1000px;
             max-height: 75vh;
+            height: 75vh;
             background: #000;
             border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            border: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
         .now-playing {
             margin-top: 15px;
-            font-size: 1.1rem;
-            color: #aaa;
+            font-size: 1rem;
+            color: var(--text-color);
+            opacity: 0.8;
             text-align: center;
             max-width: 800px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--sidebar-bg);
+            padding: 25px;
+            border-radius: 8px;
+            width: 320px;
+            border: 1px solid var(--border-color);
+        }
+        .modal-content h3 { margin-top: 0; }
+        .setting-group { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .close-modal { float: right; cursor: pointer; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="header-panel">
-            <h2>Video Viewer</h2>
-            <label class="file-btn">
-                  Choose Video from PC
+            <h2>Media Viewer</h2>
+            <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
+        </div>
+
+        <div class="controls-panel">
+            <label class="btn">
+                📂 Add PC Files
                 <input type="file" id="fileInput" multiple accept="video/*">
             </label>
+            <label class="btn" style="background: #333;">
+                📜 Load M3U Playlist
+                <input type="file" id="m3uInput" accept=".m3u,.m3u8">
+            </label>
+            <button class="btn" id="addLinkBtn" style="background: #444;">🔗 Add URL / YouTube</button>
         </div>
+
         <ul id="playlist" class="playlist">
-            <li style="padding: 20px; color: #777; text-align: center;">No videos selected yet. Click the button above to load files.</li>
+            <li style="padding: 20px; color: #888; text-align: center; cursor: default;">No media loaded yet.</li>
         </ul>
     </div>
 
     <div class="main-content">
-        <video id="videoPlayer" controls></video>
-        <div id="nowPlaying" class="now-playing">Select a video to start</div>
+        <div id="playerContainer" style="width: 100%; display: flex; justify-content: center;">
+            <video id="videoPlayer" controls style="display: block;"></video>
+            <iframe id="iframePlayer" allowfullscreen style="display: none;"></iframe>
+        </div>
+        <div id="nowPlaying" class="now-playing">Select or add a media source to start</div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h3>Settings</h3>
+            <div class="setting-group">
+                <label for="themeToggle">Light Mode</label>
+                <input type="checkbox" id="themeToggle">
+            </div>
+        </div>
     </div>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
+        const playlist = [];
         const playlistElement = document.getElementById('playlist');
         const videoPlayer = document.getElementById('videoPlayer');
+        const iframePlayer = document.getElementById('iframePlayer');
         const nowPlayingElement = document.getElementById('nowPlaying');
+        
+        // Modal elements
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const closeModal = document.getElementById('closeModal');
+        const themeToggle = document.getElementById('themeToggle');
 
-        fileInput.addEventListener('change', (event) => {
-            const files = Array.from(event.target.files);
-            
-            if (files.length === 0) return;
+        settingsBtn.onclick = () => settingsModal.style.display = 'flex';
+        closeModal.onclick = () => settingsModal.style.display = 'none';
+        window.onclick = (e) => { if (e.target === settingsModal) settingsModal.style.display = 'none'; };
 
-            playlistElement.innerHTML = '';
+        // Theme management
+        themeToggle.onchange = (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('light-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.remove('light-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        };
 
-            files.forEach((file, index) => {
-                // Create a local temporary object URL for the file
-                const fileUrl = URL.createObjectURL(file);
-                
-                const li = document.createElement('li');
-                li.textContent = file.name;
-                li.title = file.name;
-                
-                li.addEventListener('click', () => {
-                    playVideo(fileUrl, file.name, li);
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-theme');
+            themeToggle.checked = true;
+        }
+
+        // Add PC Files
+        document.getElementById('fileInput').onchange = (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                playlist.push({
+                    name: file.name,
+                    url: URL.createObjectURL(file),
+                    type: 'local'
                 });
-                
+            });
+            renderPlaylist();
+        };
+
+        // Load M3U Playlist
+        document.getElementById('m3uInput').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                parseM3U(text);
+            };
+            reader.readAsText(file);
+        };
+
+        function parseM3U(content) {
+            const lines = content.split('\n');
+            let currentTitle = '';
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const parts = line.split(',');
+                    currentTitle = parts.length > 1 ? parts[1] : 'Stream';
+                } else if (line && !line.startsWith('#')) {
+                    playlist.push({
+                        name: currentTitle || line,
+                        url: line,
+                        type: 'stream'
+                    });
+                    currentTitle = '';
+                }
+            }
+            renderPlaylist();
+        }
+
+        // Add YouTube or custom link
+        document.getElementById('addLinkBtn').onclick = () => {
+            const inputUrl = prompt("Enter video URL (YouTube link, MP4 link, etc.):");
+            if (!inputUrl) return;
+
+            let name = inputUrl;
+            if (inputUrl.includes('youtube.com') || inputUrl.includes('youtu.be')) {
+                name = "YouTube Video: " + inputUrl;
+            }
+
+            playlist.push({
+                name: name,
+                url: inputUrl,
+                type: 'url'
+            });
+            renderPlaylist();
+        };
+
+        function renderPlaylist() {
+            playlistElement.innerHTML = '';
+            if (playlist.length === 0) {
+                playlistElement.innerHTML = '<li style="padding: 20px; color: #888; text-align: center; cursor: default;">No media loaded yet.</li>';
+                return;
+            }
+
+            playlist.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = item.name;
+                li.title = item.name;
+                li.onclick = () => playMedia(index, li);
                 playlistElement.appendChild(li);
 
-                // Automatically play the first selected video
-                if (index === 0) {
-                    playVideo(fileUrl, file.name, li);
+                if (index === 0 && playlist.length === 1) {
+                    playMedia(0, li);
                 }
             });
-        });
+        }
 
-        function playVideo(url, filename, listItem) {
+        function playMedia(index, listItem) {
             document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
-            listItem.classList.add('active');
+            if (listItem) listItem.classList.add('active');
 
-            videoPlayer.src = url;
-            videoPlayer.play().catch(e => console.log("Autoplay blocked:", e));
-            nowPlayingElement.textContent = `Now Playing: ${filename}`;
+            const item = playlist[index];
+            nowPlayingElement.textContent = `Now Playing: ${item.name}`;
+
+            // Check if YouTube
+            const ytEmbed = getYouTubeEmbedUrl(item.url);
+            if (ytEmbed) {
+                videoPlayer.style.display = 'none';
+                videoPlayer.pause();
+                iframePlayer.style.display = 'block';
+                iframePlayer.src = ytEmbed;
+            } else {
+                iframePlayer.style.display = 'none';
+                iframePlayer.src = '';
+                videoPlayer.style.display = 'block';
+                videoPlayer.src = item.url;
+                videoPlayer.play().catch(e => console.log("Autoplay restricted:", e));
+            }
+        }
+
+        function getYouTubeEmbedUrl(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}?autoplay=1` : null;
         }
     </script>
 </body>
